@@ -6,7 +6,6 @@ This image is for CI/CD in [Kubernetes](https://kubernetes.io/).
 ## Usage
 This image should be used insight of a pod to execute kubectl commands.
 
-Note: Entrypoint is set to sh
 
 ### Usage in Jenkins pipeline
 

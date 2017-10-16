@@ -15,4 +15,6 @@ RUN set -x && \
 
 USER kubectl
 
-ENTRYPOINT ["/bin/sh"]
+COPY kubectl-entrypoint.sh /usr/local/bin/
+
+ENTRYPOINT ["kubectl-entrypoint.sh"]
