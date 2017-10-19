@@ -1,20 +1,18 @@
 FROM alpine
 
 ENV HOME=/.kube
-ENV VERSION=v1.7.4
+ENV VERSION=v1.7.8
 
 WORKDIR $HOME
 
 RUN set -x && \
     apk add --no-cache curl ca-certificates && \
-    curl -LO https://storage.googleapis.com/kubernetes-release/release/$VERSION/bin/linux/amd64/kubectl && \
-    mv kubectl /usr/local/bin/ && \
+    curl -L https://storage.googleapis.com/kubernetes-release/release/$VERSION/bin/linux/amd64/kubectl -o /usr/local/bin/ && \
     chmod +x /usr/local/bin/kubectl && \
     adduser kubectl -Du 1701 -h $HOME && \
     kubectl version --client
 
 USER kubectl
 
-COPY kubectl-entrypoint.sh /usr/local/bin/
-
-ENTRYPOINT ["kubectl-entrypoint.sh"]
+ENTRYPOINT ["kubectl"]
+CMD ["help"]
