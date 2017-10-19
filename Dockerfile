@@ -2,10 +2,7 @@ FROM alpine
 
 MAINTAINER Adonys Maceo <adomaceo@yahoo.es>
 
-ENV HOME_CONFIG=/.kube
 ENV VERSION=v1.7.8
-
-WORKDIR $HOME_CONFIG
 
 RUN apk add --update ca-certificates && \
     apk add --update -t deps curl && \
@@ -13,10 +10,7 @@ RUN apk add --update ca-certificates && \
     chmod +x /usr/local/bin/kubectl && \
     apk del --purge deps && \
     rm /var/cache/apk/* && \
-    adduser kubectl -Du 1701 -h $HOME_CONFIG && \
     kubectl version --client
-
-USER kubectl
 
 ENTRYPOINT ["kubectl"]
 CMD ["help"]
