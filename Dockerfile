@@ -2,15 +2,18 @@ FROM alpine
 
 MAINTAINER Adonys Maceo <adomaceo@yahoo.es>
 
+ENV CONF=/srv/kubectl
 ENV VERSION=v1.7.8
 
-RUN apk add --update ca-certificates && \
-    apk add --update -t deps curl && \
+RUN apk add --no-cache curl ca-certificates && \
     curl -L https://storage.googleapis.com/kubernetes-release/release/$VERSION/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl && \
     chmod +x /usr/local/bin/kubectl && \
-    apk del --purge deps && \
-    rm /var/cache/apk/* && \
+    adduser kubectl -Du 1701 -h $CONF && \
     kubectl version --client
+
+WORKDIR $CONF
+
+USER kubectl
 
 ENTRYPOINT ["kubectl"]
 CMD ["help"]
