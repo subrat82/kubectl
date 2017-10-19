@@ -1,9 +1,11 @@
 FROM alpine
 
+MAINTAINER Adonys Maceo <adomaceo@yahoo.es>
+
 ENV HOME_CONFIG=/.kube
 ENV VERSION=v1.7.8
 
-WORKDIR $HOME
+WORKDIR $HOME_CONFIG
 
 RUN apk add --update ca-certificates && \
     apk add --update -t deps curl && \
