@@ -5,8 +5,7 @@ ENV VERSION=v1.7.8
 
 WORKDIR $HOME
 
-RUN set -x && \
-    apk add --update ca-certificates && \
+RUN apk add --update ca-certificates && \
     apk add --update -t deps curl && \
     curl -L https://storage.googleapis.com/kubernetes-release/release/$VERSION/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl && \
     chmod +x /usr/local/bin/kubectl && \
