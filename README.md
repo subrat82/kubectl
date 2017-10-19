@@ -1,5 +1,5 @@
 ## Docker image with Kubectl
-`[kubectl](https://kubernetes.io/docs/user-guide/kubectl-overview/)` is a command line interface for running commands against Kubernetes clusters. 
+[kubectl](https://kubernetes.io/docs/user-guide/kubectl-overview/) is a command line interface for running commands against Kubernetes clusters. 
 
 This image is for CI/CD in [Kubernetes](https://kubernetes.io/).
 
