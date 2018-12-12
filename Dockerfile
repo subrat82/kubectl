@@ -3,7 +3,7 @@ FROM alpine
 MAINTAINER Adonys Maceo <adomaceo@yahoo.es>
 
 ENV CONF=/srv/kubectl
-ENV VERSION=v1.9.10
+ENV VERSION=v1.10.11
 
 RUN apk add --no-cache curl ca-certificates && \
     curl -L https://storage.googleapis.com/kubernetes-release/release/$VERSION/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl && \
