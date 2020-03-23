@@ -1,11 +1,11 @@
-def label = "worker-${UUID.randomUUID().toString()}"
+def mylabel = "worker-${UUID.randomUUID().toString()}"
 
 pipeline {
   agent {
     kubernetes {
       label mylabel
       defaultContainer 'ubuntu'
-      yaml---
+      yaml """
         apiversion: v1
         kind: Pod
         metadata:
@@ -18,7 +18,7 @@ pipeline {
               command:
               - cat
       
-       ---
+       """
          }
   }
   
