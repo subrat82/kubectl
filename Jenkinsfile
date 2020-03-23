@@ -1,108 +1,53 @@
-#!/usr/bin/groovy
+ef label = "worker-${UUID.randomUUID().toString()}"
 
-// load pipeline functions
-// Requires pipeline-github-lib plugin to load library from github
-@Library('https://github.com/subrat82/LoginWebApp-1.git')
-def pipeline = new io.estrado.Pipeline()
-
-podTemplate(label: 'jenkins-pipeline', containers: [
-    containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl:v1.8.3', command: 'cat', ttyEnabled: true)
+podTemplate(label: label, containers: [
+  containerTemplate(name: 'gradle', image: 'gradle:4.5.1-jdk9', command: 'cat', ttyEnabled: true),
+  containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
+  containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl:v1.8.8', command: 'cat', ttyEnabled: true),
+  containerTemplate(name: 'helm', image: 'lachlanevenson/k8s-helm:latest', command: 'cat', ttyEnabled: true)
 ],
-volumes:[
-    hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock'),
-]){
-
-  node ('jenkins-pipeline') {
-
-    def pwd = pwd()
-    def chart_dir = "${pwd}/charts/hellojava"
-    def tags = [env.BUILD_TAG, 'latest']
-    def docker_registry_url = "jcorioland.azurecr.io"
-    def app_hostname = "hellojava.aks.jcorioland.io";
-    def docker_email = "jucoriol@microsoft.com"
-    def docker_repo = "hellojava"
-    def docker_acct = "kubernetes"
-    def jenkins_registry_cred_id = "acr_creds"
-
-    // checkout sources
-    checkout scm
-
-    // set additional git envvars for image tagging
-    pipeline.gitEnvVars()
-
-    // Execute Maven build and tests
-    stage ('Maven Build & Tests') {
-
-      container ('maven') {
-        sh "mvn install"
-      }
-
-    }
-
-    // Test Helm deployment (dry-run)
-    stage ('Helm test deployment') {
-
-      container('helm') {
-
-        // run helm chart linter
-        pipeline.helmLint(chart_dir)
-
-        // run dry-run helm chart installation
-        pipeline.helmDeploy(
-          dry_run       : true,
-          name          : "hello-java",
-          namespace     : "hello-java",
-          version_tag   : tags.get(0),
-          chart_dir     : chart_dir,
-          replicas      : 2,
-          cpu           : "10m",
-          memory        : "128Mi",
-          hostname      : app_hostname
-        )
-
-      }
-    }
-
-    // Build and push the Docker image
-    stage ('Build & Push Docker image') {
-
-      container('docker') {
-        println "build & push"
-
-        // perform docker login
-        withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: jenkins_registry_cred_id, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-          sh "docker login -e ${docker_email} -u ${env.USERNAME} -p ${env.PASSWORD} ${docker_registry_url}"
+volumes: [
+  hostPathVolume(mountPath: '/home/gradle/.gradle', hostPath: '/tmp/jenkins/.gradle'),
+  hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
+]) {
+  node(label) {
+    def myRepo = checkout scm
+    def gitCommit = myRepo.GIT_COMMIT
+    def gitBranch = myRepo.GIT_BRANCH
+    def shortGitCommit = "${gitCommit[0..10]}"
+    def previousGitCommit = sh(script: "git rev-parse ${gitCommit}~", returnStdout: true)
+ 
+    stage('Test') {
+      try {
+        container('gradle') {
+          sh """
+            pwd
+            echo "GIT_BRANCH=${gitBranch}" >> /etc/environment
+            echo "GIT_COMMIT=${gitCommit}" >> /etc/environment
+            gradle test
+            """
         }
-
-        // build and publish container
-        pipeline.containerBuildPub(
-            dockerfile: "./",
-            host      : docker_registry_url,
-            acct      : docker_acct,
-            repo      : docker_repo,
-            tags      : tags,
-            auth_id   : jenkins_registry_cred_id
-        )
+      }
+      catch (exc) {
+        println "Failed to test - ${currentBuild.fullDisplayName}"
+        throw(exc)
+      }
+    }
+    stage('Build') {
+      container('gradle') {
+        sh "gradle build"
       }
     }
     
-    // Deploy the new version to Kubernetes
-    stage ('Deploy to Kubernetes') {
-        container('helm') {
-
-          // Deploy using Helm chart
-           pipeline.helmDeploy(
-            dry_run       : false,
-            name          : "hello-java",
-            namespace     : "hello-java",
-            version_tag   : tags.get(0),
-            chart_dir     : chart_dir,
-            replicas      : 2,
-            cpu           : "10m",
-            memory        : "128Mi",
-            hostname      : app_hostname
-          )
-        }
+    stage('Run kubectl') {
+      container('kubectl') {
+        sh "kubectl get pods"
       }
+    }
+    stage('Run helm') {
+      container('helm') {
+        sh "helm list"
+      }
+    }
   }
 }
